@@ -9,14 +9,5 @@
       "colorIdx": 0
     }
   ],
-  "sessions": {
-    "2026-05-04": [
-      {
-        "id": "h51ph9bz",
-        "studentId": "b0s8dhx8",
-        "duration": 90,
-        "note": ""
-      }
-    ]
-  }
+  "sessions": {}
 }
