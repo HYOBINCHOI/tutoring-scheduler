@@ -12,9 +12,9 @@
 <title>과외 매니저</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; background: #F7F6F3; min-height: 100vh; color: #1a1a1a; -webkit-user-select: none; user-select: none; }
-  input, select, button { font-family: inherit; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Pretendard','Noto Sans KR',sans-serif;background:#F7F6F3;min-height:100vh;color:#1a1a1a;-webkit-user-select:none;user-select:none}
+  input,select,button,textarea{font-family:inherit}
 </style>
 </head>
 <body>
@@ -23,10 +23,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script type="module">
 import htm from 'https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.module.js';
-const html = htm.bind(React.createElement);
-const { useState } = React;
+const html=htm.bind(React.createElement);
+const{useState,useEffect,useRef}=React;
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 const DAYS_KR=["일","월","화","수","목","금","토"];
 const MONTHS_KR=["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
@@ -58,9 +58,46 @@ function getCycleSessions(sid,sessions,start,end){
   });
   list.sort((a,b)=>a.date.localeCompare(b.date));return{count,totalMin,list};
 }
-function loadData(){try{const r=localStorage.getItem("tutor-data");if(r)return JSON.parse(r)}catch(e){}return{students:[],sessions:{}}}
-function saveData(st,se){try{localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se}))}catch(e){}}
 
+// --- GitHub Storage ---
+const GH_OWNER="HYOBINCHOI";
+const GH_REPO="tutoring-scheduler";
+const GH_FILE="data.json";
+
+function getToken(){return localStorage.getItem("gh-token")||""}
+function setToken(t){localStorage.setItem("gh-token",t)}
+
+async function ghLoad(){
+  const token=getToken();if(!token)return null;
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,{
+      headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github.v3+json"}
+    });
+    if(res.status===404)return{students:[],sessions:{},sha:null};
+    if(!res.ok)return null;
+    const json=await res.json();
+    const content=JSON.parse(atob(json.content));
+    return{...content,sha:json.sha};
+  }catch(e){return null}
+}
+
+async function ghSave(students,sessions,sha){
+  const token=getToken();if(!token)return null;
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify({students,sessions},null,2))));
+  const body={message:"데이터 업데이트",content};
+  if(sha)body.sha=sha;
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,{
+      method:"PUT",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/vnd.github.v3+json"},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok)return null;
+    const json=await res.json();
+    return json.content.sha;
+  }catch(e){return null}
+}
+
+// --- Components ---
 function StudentCycleCard({student,color,start,end,count,totalMin,list}){
   const[expanded,setExpanded]=useState(false);const c=color,st=student;
   const endDay=end.getDate()-1>0?end.getDate()-1:new Date(end.getFullYear(),end.getMonth(),0).getDate();
@@ -96,10 +133,10 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
     </div>`;
 }
 
+// --- Main App ---
 function TutoringTracker(){
-  const initial=loadData();
-  const[students,setStudents]=useState(initial.students);
-  const[sessions,setSessions]=useState(initial.sessions);
+  const[students,setStudents]=useState([]);
+  const[sessions,setSessions]=useState({});
   const[currentYear,setCurrentYear]=useState(new Date().getFullYear());
   const[currentMonth,setCurrentMonth]=useState(new Date().getMonth());
   const[selectedDate,setSelectedDate]=useState(null);
@@ -111,9 +148,41 @@ function TutoringTracker(){
   const[sessionForm,setSessionForm]=useState({studentId:"",duration:90,note:""});
   const[bulkMode,setBulkMode]=useState(false);
   const[bulkDates,setBulkDates]=useState([]);
+  const[token,setTokenState]=useState(getToken());
+  const[syncStatus,setSyncStatus]=useState("idle"); // idle, syncing, ok, error
+  const[loaded,setLoaded]=useState(false);
+  const shaRef=useRef(null);
 
-  const updateStudents=(s)=>{setStudents(s);saveData(s,sessions)};
-  const updateSessions=(s)=>{setSessions(s);saveData(students,s)};
+  // Load from GitHub on mount
+  useEffect(()=>{
+    if(!token){setLoaded(true);return}
+    setSyncStatus("syncing");
+    ghLoad().then(result=>{
+      if(result){
+        setStudents(result.students||[]);setSessions(result.sessions||{});
+        shaRef.current=result.sha;setSyncStatus("ok");
+        localStorage.setItem("tutor-data",JSON.stringify({students:result.students||[],sessions:result.sessions||{}}));
+      }else{
+        // Fallback to localStorage
+        try{const r=localStorage.getItem("tutor-data");if(r){const d=JSON.parse(r);setStudents(d.students||[]);setSessions(d.sessions||{})}}catch(e){}
+        setSyncStatus("error");
+      }
+      setLoaded(true);
+    });
+  },[token]);
+
+  // Save to GitHub
+  const saveToGH=async(st,se)=>{
+    localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se}));
+    if(!token)return;
+    setSyncStatus("syncing");
+    const newSha=await ghSave(st,se,shaRef.current);
+    if(newSha){shaRef.current=newSha;setSyncStatus("ok")}
+    else setSyncStatus("error");
+  };
+
+  const updateStudents=(s)=>{setStudents(s);saveToGH(s,sessions)};
+  const updateSessions=(s)=>{setSessions(s);saveToGH(students,s)};
 
   const saveStudent=()=>{
     if(!form.name.trim())return;let ns;
@@ -147,29 +216,37 @@ function TutoringTracker(){
   const calendarCells=[];for(let i=0;i<firstDay;i++)calendarCells.push(null);for(let d=1;d<=totalDays;d++)calendarCells.push(d);
   const selectedSessions=selectedDate?(sessions[selectedDate]||[]):[];
 
-  const exportData=()=>{
-    const data=JSON.stringify({students,sessions},null,2);const blob=new Blob([data],{type:"application/json"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");const now=new Date();
-    a.href=url;a.download="과외매니저_백업_"+now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0")+".json";
-    a.click();URL.revokeObjectURL(url);
+  const handleTokenSave=(newToken)=>{
+    setToken(newToken);setTokenState(newToken);
   };
-  const importData=()=>{
-    const input=document.createElement("input");input.type="file";input.accept=".json";
-    input.onchange=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();
-      reader.onload=(ev)=>{try{const parsed=JSON.parse(ev.target.result);
-        if(parsed.students&&parsed.sessions){if(confirm("학생 "+parsed.students.length+"명의 데이터를 불러옵니다. 현재 데이터는 덮어씌워집니다. 계속하시겠습니까?")){
-          setStudents(parsed.students);setSessions(parsed.sessions);saveData(parsed.students,parsed.sessions);alert("데이터를 성공적으로 불러왔습니다!")}}
-        else alert("올바른 백업 파일이 아닙니다.")}catch(err){alert("파일을 읽을 수 없습니다.")}};reader.readAsText(file)};input.click();
-  };
+
+  const syncDot=syncStatus==="syncing"?"#FF9800":syncStatus==="ok"?"#4CAF50":syncStatus==="error"?"#F44336":"#ccc";
 
   const tabBtn=(v,label)=>html`<button key=${v} onClick=${()=>{setView(v);if(v==="students"){setEditingStudent(null);setForm({name:"",subject:"",pay:300000,payDay:1})}}}
     style=${{padding:"6px 14px",borderRadius:8,border:"none",background:view===v?"#1a1a1a":"#EFEDE8",color:view===v?"#fff":"#555",fontWeight:600,fontSize:13,cursor:"pointer"}}>${label}</button>`;
+
+  if(!loaded)return html`<div style=${{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",color:"#999",fontSize:14}}>불러오는 중...</div>`;
+
+  // Token setup screen
+  if(!token)return html`<div style=${{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
+    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>과외 매니저</div>
+    <div style=${{fontSize:13,color:"#999",marginBottom:32}}>GitHub에 데이터를 저장합니다</div>
+    <div style=${{background:"#fff",borderRadius:14,padding:24,border:"1px solid #E8E6E1",textAlign:"left"}}>
+      <div style=${{fontSize:14,fontWeight:700,marginBottom:16}}>GitHub 토큰 입력</div>
+      <input id="token-input" placeholder="ghp_xxxxxxxxxxxx" style=${{width:"100%",padding:"12px 14px",borderRadius:8,border:"1px solid #ddd",fontSize:14,background:"#FAFAF8",boxSizing:"border-box",marginBottom:12}} />
+      <button onClick=${()=>{const v=document.getElementById("token-input").value.trim();if(v)handleTokenSave(v);else alert("토큰을 입력해주세요.")}}
+        style=${{width:"100%",padding:"12px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>시작하기</button>
+      <div style=${{fontSize:11,color:"#bbb",marginTop:12,lineHeight:1.6}}>토큰은 이 기기에만 저장되며 외부로 전송되지 않습니다.</div>
+    </div>
+  </div>`;
 
   return html`<div>
     <div style=${{background:"#fff",borderBottom:"1px solid #E8E6E1",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
       <div style=${{display:"flex",alignItems:"center",gap:10}}>
         <span style=${{fontSize:22,fontWeight:800,letterSpacing:"-0.5px"}}>과외 매니저</span>
         <span style=${{fontSize:11,background:"#E8F5E9",color:"#2E7D32",padding:"2px 8px",borderRadius:99,fontWeight:600}}>${students.length}명</span>
+        <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{}}))}else setSyncStatus("error")}}}
+          style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
       </div>
       <div style=${{display:"flex",gap:6}}>${tabBtn("calendar","캘린더")}${tabBtn("summary","정산")}${tabBtn("students","학생관리")}</div>
     </div>
@@ -332,14 +409,16 @@ function TutoringTracker(){
       </div>`:null}
 
       <div style=${{background:"#fff",borderRadius:14,padding:16,marginTop:24,marginBottom:40,border:"1px solid #E8E6E1"}}>
-        <div style=${{fontSize:13,fontWeight:700,marginBottom:12,color:"#555"}}>데이터 관리</div>
-        <div style=${{display:"flex",gap:8,marginBottom:10}}>
-          <button onClick=${exportData} style=${{flex:1,padding:"10px 0",borderRadius:8,border:"1px solid #4CAF50",background:"#E8F5E9",color:"#2E7D32",fontWeight:600,fontSize:13,cursor:"pointer"}}>📥 내보내기</button>
-          <button onClick=${importData} style=${{flex:1,padding:"10px 0",borderRadius:8,border:"1px solid #2196F3",background:"#E3F2FD",color:"#1565C0",fontWeight:600,fontSize:13,cursor:"pointer"}}>📤 불러오기</button>
+        <div style=${{fontSize:13,fontWeight:700,marginBottom:12,color:"#555"}}>설정</div>
+        <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}>
+          <div><div style=${{fontSize:13,fontWeight:600}}>GitHub 동기화</div>
+            <div style=${{fontSize:11,color:syncStatus==="ok"?"#4CAF50":syncStatus==="error"?"#F44336":"#999",marginTop:2}}>
+              ${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패":"미연결"}</div></div>
+          <button onClick=${()=>{if(confirm("토큰을 삭제하고 로그아웃하시겠습니까?")){localStorage.removeItem("gh-token");setTokenState("");location.reload()}}}
+            style=${{padding:"5px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:11,cursor:"pointer",color:"#888"}}>토큰 변경</button>
         </div>
-        <div style=${{fontSize:11,color:"#bbb",marginBottom:12,lineHeight:1.6}}>다른 기기로 옮기려면: 내보내기 → 파일을 옮긴 뒤 → 불러오기</div>
-        <button onClick=${()=>{if(confirm("모든 데이터를 초기화하시겠습니까?")){setStudents([]);setSessions({});localStorage.removeItem("tutor-data")}}}
-          style=${{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #eee",background:"#FAFAF8",color:"#ccc",fontSize:11,cursor:"pointer"}}>데이터 초기화</button>
+        <button onClick=${()=>{if(confirm("모든 데이터를 초기화하시겠습니까?")){setStudents([]);setSessions({});saveToGH([],{})}}}
+          style=${{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #eee",background:"#FAFAF8",color:"#ccc",fontSize:11,cursor:"pointer",marginTop:12}}>데이터 초기화</button>
       </div>
     </div>
   </div>`;
