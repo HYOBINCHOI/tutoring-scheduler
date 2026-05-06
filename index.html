@@ -6,24 +6,15 @@
 <meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="tutoring scheduler">
+<meta name="apple-mobile-web-app-title" content="과외매니저">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<title>tutoring scheduler</title>
+<title>과외 매니저</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
-  body{font-family:'Pretendard','Noto Sans KR',sans-serif;background:#F7F6F3;min-height:100vh;color:#1a1a1a;-webkit-user-select:none;user-select:none;overflow-x:hidden;word-break:keep-all}
-  input,select,button,textarea{font-family:inherit;max-width:100%;font-size:16px}
-  button{touch-action:manipulation}
-  #root{width:100%;overflow-x:hidden}
-  @media (min-width:481px){
-    input,select,button,textarea{font-size:inherit}
-  }
-  @media (max-width:480px){
-    input,select,textarea{font-size:16px!important}
-  }
+  body{font-family:'Pretendard','Noto Sans KR',sans-serif;background:#F7F6F3;min-height:100vh;color:#1a1a1a;-webkit-user-select:none;user-select:none}
+  input,select,button,textarea{font-family:inherit}
 </style>
 </head>
 <body>
@@ -85,14 +76,14 @@ async function ghLoad(){
     if(res.status===404)return{students:[],sessions:{},sha:null};
     if(!res.ok)return null;
     const json=await res.json();
-    const content=JSON.parse(atob(json.content));
+    const content=JSON.parse(decodeURIComponent(escape(atob(json.content))));
     return{...content,sha:json.sha};
   }catch(e){return null}
 }
 
-async function ghSave(students,sessions,dateNotes,sha){
+async function ghSave(students,sessions,sha){
   const token=getToken();if(!token)return null;
-  const content=btoa(unescape(encodeURIComponent(JSON.stringify({students,sessions,dateNotes},null,2))));
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify({students,sessions},null,2))));
   const body={message:"데이터 업데이트",content};
   if(sha)body.sha=sha;
   try{
@@ -112,9 +103,9 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
   const endDay=end.getDate()-1>0?end.getDate()-1:new Date(end.getFullYear(),end.getMonth(),0).getDate();
   return html`
     <div style=${{background:"#fff",borderRadius:14,padding:16,marginBottom:12,border:"1px solid #E8E6E1",borderLeft:"4px solid "+c.border}}>
-      <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:10}}>
-        <div style=${{minWidth:0}}><span style=${{fontWeight:700,fontSize:16,color:c.text}}>${st.name}</span><span style=${{fontSize:12,color:"#999",marginLeft:8}}>${st.subject}</span></div>
-        <span style=${{fontSize:11,background:c.bg,color:c.text,padding:"3px 10px",borderRadius:99,fontWeight:600,whiteSpace:"nowrap"}}>급여일 매월 ${st.payDay}일</span>
+      <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div><span style=${{fontWeight:700,fontSize:16,color:c.text}}>${st.name}</span><span style=${{fontSize:12,color:"#999",marginLeft:8}}>${st.subject}</span></div>
+        <span style=${{fontSize:11,background:c.bg,color:c.text,padding:"3px 10px",borderRadius:99,fontWeight:600}}>급여일 매월 ${st.payDay}일</span>
       </div>
       <div style=${{background:"#FAFAF8",borderRadius:10,padding:"10px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
         <span style=${{fontSize:15,fontWeight:700}}>${start.getMonth()+1}/${start.getDate()}</span>
@@ -131,13 +122,13 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
           <div style=${{fontSize:24,fontWeight:800}}>${Math.floor(totalMin/60)}<span style=${{fontSize:13,fontWeight:500,color:"#999"}}>시간 </span>${totalMin%60>0?html`${totalMin%60}<span style=${{fontSize:13,fontWeight:500,color:"#999"}}>분</span>`:null}</div>
         </div>
       </div>
-      <div style=${{background:c.bg,borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
+      <div style=${{background:c.bg,borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <span style=${{fontSize:13,color:c.text,fontWeight:600}}>급여</span>
-        <span style=${{fontSize:18,fontWeight:800,color:c.text,whiteSpace:"nowrap"}}>${formatMoney(st.pay)}</span>
+        <span style=${{fontSize:18,fontWeight:800,color:c.text}}>${formatMoney(st.pay)}</span>
       </div>
       ${list.length>0?html`<div>
         <button onClick=${()=>setExpanded(!expanded)} style=${{width:"100%",padding:"8px 0",border:"none",background:"none",color:"#999",fontSize:12,cursor:"pointer",fontWeight:600}}>${expanded?"수업 내역 접기 ▲":"수업 내역 보기 ▼"}</button>
-        ${expanded?html`<div style=${{marginTop:4}}>${list.map((s,i)=>{const p=s.date.split("-");return html`<div key=${s.id||i} style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 12px",borderRadius:8,background:i%2===0?"#FAFAF8":"#fff",fontSize:13,lineHeight:1.45}}><span style=${{color:"#555",fontWeight:600,whiteSpace:"nowrap"}}>${parseInt(p[1])}월 ${parseInt(p[2])}일</span><span style=${{color:"#999",wordBreak:"normal",overflowWrap:"break-word"}}>${s.duration}분${s.note?" · "+s.note:""}</span></div>`})}</div>`:null}
+        ${expanded?html`<div style=${{marginTop:4}}>${list.map((s,i)=>{const p=s.date.split("-");return html`<div key=${s.id||i} style=${{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderRadius:8,background:i%2===0?"#FAFAF8":"#fff",fontSize:13}}><span style=${{color:"#555",fontWeight:600}}>${parseInt(p[1])}월 ${parseInt(p[2])}일</span><span style=${{color:"#999"}}>${s.duration}분${s.note?" · "+s.note:""}</span></div>`})}</div>`:null}
       </div>`:null}
     </div>`;
 }
@@ -146,7 +137,6 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
 function TutoringTracker(){
   const[students,setStudents]=useState([]);
   const[sessions,setSessions]=useState({});
-  const[dateNotes,setDateNotes]=useState({});
   const[currentYear,setCurrentYear]=useState(new Date().getFullYear());
   const[currentMonth,setCurrentMonth]=useState(new Date().getMonth());
   const[selectedDate,setSelectedDate]=useState(null);
@@ -154,8 +144,7 @@ function TutoringTracker(){
   const[editingStudent,setEditingStudent]=useState(null);
   const[addingSession,setAddingSession]=useState(false);
   const[cycleOffset,setCycleOffset]=useState(0);
-  const emptyStudentForm={name:"",subject:"",pay:300000,payDay:1};
-  const[form,setForm]=useState(emptyStudentForm);
+  const[form,setForm]=useState({name:"",subject:"",pay:300000,payDay:1});
   const[sessionForm,setSessionForm]=useState({studentId:"",duration:90,note:""});
   const[bulkMode,setBulkMode]=useState(false);
   const[bulkDates,setBulkDates]=useState([]);
@@ -170,12 +159,12 @@ function TutoringTracker(){
     setSyncStatus("syncing");
     ghLoad().then(result=>{
       if(result){
-        setStudents(result.students||[]);setSessions(result.sessions||{});setDateNotes(result.dateNotes||{});
+        setStudents(result.students||[]);setSessions(result.sessions||{});
         shaRef.current=result.sha;setSyncStatus("ok");
-        localStorage.setItem("tutor-data",JSON.stringify({students:result.students||[],sessions:result.sessions||{},dateNotes:result.dateNotes||{}}));
+        localStorage.setItem("tutor-data",JSON.stringify({students:result.students||[],sessions:result.sessions||{}}));
       }else{
         // Fallback to localStorage
-        try{const r=localStorage.getItem("tutor-data");if(r){const d=JSON.parse(r);setStudents(d.students||[]);setSessions(d.sessions||{});setDateNotes(d.dateNotes||{})}}catch(e){}
+        try{const r=localStorage.getItem("tutor-data");if(r){const d=JSON.parse(r);setStudents(d.students||[]);setSessions(d.sessions||{})}}catch(e){}
         setSyncStatus("error");
       }
       setLoaded(true);
@@ -183,32 +172,24 @@ function TutoringTracker(){
   },[token]);
 
   // Save to GitHub
-  const saveToGH=async(st,se,dn=dateNotes)=>{
-    localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se,dateNotes:dn}));
+  const saveToGH=async(st,se)=>{
+    localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se}));
     if(!token)return;
     setSyncStatus("syncing");
-    const newSha=await ghSave(st,se,dn,shaRef.current);
+    const newSha=await ghSave(st,se,shaRef.current);
     if(newSha){shaRef.current=newSha;setSyncStatus("ok")}
     else setSyncStatus("error");
   };
 
   const updateStudents=(s)=>{setStudents(s);saveToGH(s,sessions)};
   const updateSessions=(s)=>{setSessions(s);saveToGH(students,s)};
-  const updateDateNote=(dk,note,sync=false)=>{
-    const next={...dateNotes};
-    if(note.trim())next[dk]=note;
-    else delete next[dk];
-    setDateNotes(next);
-    localStorage.setItem("tutor-data",JSON.stringify({students,sessions,dateNotes:next}));
-    if(sync)saveToGH(students,sessions,next);
-  };
 
   const saveStudent=()=>{
     if(!form.name.trim())return;let ns;
     if(editingStudent)ns=students.map(s=>s.id===editingStudent.id?{...s,...form}:s);
     else{const used=students.map(s=>s.colorIdx);let ci=0;while(used.includes(ci)&&ci<COLORS.length)ci++;if(ci>=COLORS.length)ci=students.length%COLORS.length;
       ns=[...students,{id:genId(),...form,colorIdx:ci}]}
-    updateStudents(ns);setForm(emptyStudentForm);setEditingStudent(null);setView("calendar");
+    updateStudents(ns);setForm({name:"",subject:"",pay:300000,payDay:1});setEditingStudent(null);setView("calendar");
   };
   const deleteStudent=(id)=>{
     updateStudents(students.filter(s=>s.id!==id));
@@ -235,7 +216,6 @@ function TutoringTracker(){
   const today=new Date();const todayKey=dateKey(today.getFullYear(),today.getMonth(),today.getDate());
   const calendarCells=[];for(let i=0;i<firstDay;i++)calendarCells.push(null);for(let d=1;d<=totalDays;d++)calendarCells.push(d);
   const selectedSessions=selectedDate?(sessions[selectedDate]||[]):[];
-  const selectedDateNote=selectedDate?(dateNotes[selectedDate]||""):"";
 
   const handleTokenSave=(newToken)=>{
     setToken(newToken);setTokenState(newToken);
@@ -243,14 +223,14 @@ function TutoringTracker(){
 
   const syncDot=syncStatus==="syncing"?"#FF9800":syncStatus==="ok"?"#4CAF50":syncStatus==="error"?"#F44336":"#ccc";
 
-  const tabBtn=(v,label)=>html`<button key=${v} onClick=${()=>{setView(v);if(v==="students"){setEditingStudent(null);setForm(emptyStudentForm)}}}
-    style=${{padding:"7px 12px",borderRadius:8,border:"none",background:view===v?"#1a1a1a":"#EFEDE8",color:view===v?"#fff":"#555",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap",flex:"1 1 auto",minHeight:34}}>${label}</button>`;
+  const tabBtn=(v,label)=>html`<button key=${v} onClick=${()=>{setView(v);if(v==="students"){setEditingStudent(null);setForm({name:"",subject:"",pay:300000,payDay:1})}}}
+    style=${{padding:"6px 14px",borderRadius:8,border:"none",background:view===v?"#1a1a1a":"#EFEDE8",color:view===v?"#fff":"#555",fontWeight:600,fontSize:13,cursor:"pointer"}}>${label}</button>`;
 
   if(!loaded)return html`<div style=${{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",color:"#999",fontSize:14}}>불러오는 중...</div>`;
 
   // Token setup screen
-  if(!token)return html`<div style=${{maxWidth:400,margin:"0 auto",padding:"64px 16px",textAlign:"center"}}>
-    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>tutoring scheduler</div>
+  if(!token)return html`<div style=${{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
+    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>과외 매니저</div>
     <div style=${{fontSize:13,color:"#999",marginBottom:32}}>GitHub에 데이터를 저장합니다</div>
     <div style=${{background:"#fff",borderRadius:14,padding:24,border:"1px solid #E8E6E1",textAlign:"left"}}>
       <div style=${{fontSize:14,fontWeight:700,marginBottom:16}}>GitHub 토큰 입력</div>
@@ -262,14 +242,14 @@ function TutoringTracker(){
   </div>`;
 
   return html`<div>
-    <div style=${{background:"#fff",borderBottom:"1px solid #E8E6E1",padding:"14px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",position:"sticky",top:0,zIndex:10}}>
-      <div style=${{display:"flex",alignItems:"center",gap:8,minWidth:0,flex:"1 1 180px"}}>
-        <span style=${{fontSize:20,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>tutoring scheduler</span>
+    <div style=${{background:"#fff",borderBottom:"1px solid #E8E6E1",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
+      <div style=${{display:"flex",alignItems:"center",gap:10}}>
+        <span style=${{fontSize:22,fontWeight:800,letterSpacing:"-0.5px"}}>과외 매니저</span>
         <span style=${{fontSize:11,background:"#E8F5E9",color:"#2E7D32",padding:"2px 8px",borderRadius:99,fontWeight:600}}>${students.length}명</span>
-        <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});setDateNotes(r.dateNotes||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{},dateNotes:r.dateNotes||{}}))}else setSyncStatus("error")}}}
-          style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s",flex:"0 0 auto"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
+        <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{}}))}else setSyncStatus("error")}}}
+          style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
       </div>
-      <div style=${{display:"flex",gap:6,flex:"1 1 220px",minWidth:0}}>${tabBtn("calendar","캘린더")}${tabBtn("summary","정산")}${tabBtn("students","학생관리")}</div>
+      <div style=${{display:"flex",gap:6}}>${tabBtn("calendar","캘린더")}${tabBtn("summary","정산")}${tabBtn("students","학생관리")}</div>
     </div>
     <div style=${{maxWidth:520,margin:"0 auto",padding:"16px 12px"}}>
 
@@ -294,7 +274,7 @@ function TutoringTracker(){
             if(day===null)return html`<div key=${"e"+idx} />`;
             const dk=dateKey(currentYear,currentMonth,day);const daySessions=sessions[dk]||[];
             const isToday=dk===todayKey,isSelected=!bulkMode&&dk===selectedDate,isBulkSelected=bulkMode&&bulkDates.includes(dk);
-            const dayOfWeek=(firstDay+day-1)%7;const isPayDay=students.some(s=>s.payDay===day);const hasDateNote=!!(dateNotes[dk]&&dateNotes[dk].trim());
+            const dayOfWeek=(firstDay+day-1)%7;const isPayDay=students.some(s=>s.payDay===day);
             return html`<div key=${dk} onClick=${()=>{if(bulkMode)toggleBulkDate(dk);else{setSelectedDate(dk);setAddingSession(false)}}}
               style=${{aspectRatio:"1",borderRadius:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 cursor:"pointer",position:"relative",
@@ -306,16 +286,15 @@ function TutoringTracker(){
                 ${daySessions.map(s=>{const st2=students.find(x=>x.id===s.studentId);const cl=st2?COLORS[st2.colorIdx%COLORS.length]:COLORS[0];
                   return html`<div key=${s.id} style=${{width:6,height:6,borderRadius:99,background:isSelected?"#fff":cl.dot}} />`})}
               </div>`:null}
-              ${hasDateNote?html`<div style=${{position:"absolute",bottom:3,right:4,fontSize:9,color:isSelected||isBulkSelected?"#fff":"#9C27B0",fontWeight:800}}>✎</div>`:null}
               ${isPayDay?html`<div style=${{position:"absolute",top:2,right:4,fontSize:8,color:isSelected||isBulkSelected?"#FFD54F":"#FF9800",fontWeight:700}}>₩</div>`:null}
             </div>`;
           })}
         </div>
 
         ${bulkMode?html`<div style=${{background:"#fff",borderRadius:14,padding:16,border:"2px solid #FF9800",marginBottom:16}}>
-          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:12}}>
-            <div style=${{minWidth:0}}><span style=${{fontWeight:700,fontSize:15,color:"#E65100"}}>일괄 등록</span><span style=${{fontSize:12,color:"#999",marginLeft:8}}>날짜를 여러 개 선택하세요</span></div>
-            ${bulkDates.length>0?html`<span style=${{fontSize:12,background:"#FF9800",color:"#fff",padding:"2px 10px",borderRadius:99,fontWeight:700,whiteSpace:"nowrap"}}>${bulkDates.length}일 선택</span>`:null}
+          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div><span style=${{fontWeight:700,fontSize:15,color:"#E65100"}}>일괄 등록</span><span style=${{fontSize:12,color:"#999",marginLeft:8}}>날짜를 여러 개 선택하세요</span></div>
+            ${bulkDates.length>0?html`<span style=${{fontSize:12,background:"#FF9800",color:"#fff",padding:"2px 10px",borderRadius:99,fontWeight:700}}>${bulkDates.length}일 선택</span>`:null}
           </div>
           ${bulkDates.length>0?html`<div style=${{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
             ${bulkDates.sort().map(dk=>{const p=dk.split("-");return html`<span key=${dk} onClick=${()=>toggleBulkDate(dk)}
@@ -327,7 +306,7 @@ function TutoringTracker(){
               <option value="">학생 선택</option>
               ${students.map(s=>html`<option key=${s.id} value=${s.id}>${s.name} (${s.subject})</option>`)}
             </select>
-            <div style=${{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <div style=${{display:"flex",gap:8,alignItems:"center"}}>
               <label style=${{fontSize:12,color:"#888",whiteSpace:"nowrap"}}>수업시간</label>
               <input type="number" value=${sessionForm.duration} onChange=${e=>setSessionForm({...sessionForm,duration:parseInt(e.target.value)||0})}
                 style=${{padding:"8px 10px",borderRadius:8,border:"1px solid #ddd",fontSize:13,width:70,background:"#fff"}} />
@@ -335,29 +314,27 @@ function TutoringTracker(){
             </div>
             <input placeholder="메모 (선택)" value=${sessionForm.note} onChange=${e=>setSessionForm({...sessionForm,note:e.target.value})}
               style=${{padding:"8px 10px",borderRadius:8,border:"1px solid #ddd",fontSize:13,background:"#fff"}} />
-            <div style=${{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <div style=${{display:"flex",gap:6}}>
               <button onClick=${addBulkSessions} disabled=${bulkDates.length===0||!sessionForm.studentId}
-                style=${{flex:"1 1 180px",padding:"10px 0",borderRadius:8,border:"none",background:bulkDates.length>0&&sessionForm.studentId?"#FF9800":"#ddd",color:"#fff",fontWeight:700,fontSize:14,cursor:bulkDates.length>0&&sessionForm.studentId?"pointer":"default"}}>
+                style=${{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:bulkDates.length>0&&sessionForm.studentId?"#FF9800":"#ddd",color:"#fff",fontWeight:700,fontSize:14,cursor:bulkDates.length>0&&sessionForm.studentId?"pointer":"default"}}>
                 ${bulkDates.length}일 한번에 등록</button>
               <button onClick=${()=>{setBulkMode(false);setBulkDates([])}}
-                style=${{flex:"0 0 auto",padding:"10px 14px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:13,cursor:"pointer",color:"#888"}}>취소</button>
+                style=${{padding:"10px 14px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:13,cursor:"pointer",color:"#888"}}>취소</button>
             </div>
           </div>
         </div>`:null}
 
         ${!bulkMode&&selectedDate?html`<div style=${{background:"#fff",borderRadius:14,padding:16,border:"1px solid #E8E6E1"}}>
-          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:12}}>
+          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <span style=${{fontWeight:700,fontSize:15}}>${parseInt(selectedDate.split("-")[1])}월 ${parseInt(selectedDate.split("-")[2])}일 수업</span>
             ${students.length>0?html`<button onClick=${()=>{setAddingSession(true);setSessionForm({studentId:students[0]?.id||"",duration:90,note:""})}}
-              style=${{padding:"7px 12px",borderRadius:8,border:"none",background:"#4CAF50",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>+ 수업 추가</button>`:null}
+              style=${{padding:"5px 12px",borderRadius:8,border:"none",background:"#4CAF50",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer"}}>+ 수업 추가</button>`:null}
           </div>
-          <textarea placeholder="날짜 메모 (선택)" value=${selectedDateNote} onChange=${e=>updateDateNote(selectedDate,e.target.value)} onBlur=${e=>updateDateNote(selectedDate,e.target.value,true)}
-            style=${{width:"100%",minHeight:70,padding:"10px 12px",borderRadius:10,border:"1px solid #E8E6E1",fontSize:13,lineHeight:1.5,background:"#FAFAF8",resize:"vertical",marginBottom:12,boxSizing:"border-box"}} />
           ${selectedSessions.length===0&&!addingSession?html`<div style=${{color:"#aaa",fontSize:13,textAlign:"center",padding:20}}>${students.length===0?"먼저 학생을 등록해주세요":"수업 기록이 없습니다"}</div>`:null}
           ${selectedSessions.map(s=>{const st2=students.find(x=>x.id===s.studentId);const cl=st2?COLORS[st2.colorIdx%COLORS.length]:COLORS[0];
-            return html`<div key=${s.id} style=${{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"10px 12px",borderRadius:10,background:cl.bg,marginBottom:6,borderLeft:"4px solid "+cl.border}}>
-              <div style=${{minWidth:0,flex:"1 1 auto",lineHeight:1.45}}><div style=${{fontWeight:700,fontSize:14,color:cl.text,wordBreak:"normal"}}>${st2?.name||"삭제된 학생"}</div>
-              <div style=${{fontSize:12,color:"#888",marginTop:2,wordBreak:"normal",overflowWrap:"break-word"}}>${st2?.subject} · ${s.duration}분${s.note?" · "+s.note:""}</div></div>
+            return html`<div key=${s.id} style=${{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",borderRadius:10,background:cl.bg,marginBottom:6,borderLeft:"4px solid "+cl.border}}>
+              <div><div style=${{fontWeight:700,fontSize:14,color:cl.text}}>${st2?.name||"삭제된 학생"}</div>
+              <div style=${{fontSize:12,color:"#888",marginTop:2}}>${st2?.subject} · ${s.duration}분${s.note?" · "+s.note:""}</div></div>
               <button onClick=${()=>deleteSession(selectedDate,s.id)} style=${{border:"none",background:"none",color:"#ccc",cursor:"pointer",fontSize:16,padding:4}}>×</button>
             </div>`})}
           ${addingSession?html`<div style=${{marginTop:8,padding:14,background:"#FAFAF8",borderRadius:10,border:"1px dashed #ddd"}}>
@@ -366,7 +343,7 @@ function TutoringTracker(){
                 style=${{padding:"8px 10px",borderRadius:8,border:"1px solid #ddd",fontSize:13,background:"#fff"}}>
                 ${students.map(s=>html`<option key=${s.id} value=${s.id}>${s.name} (${s.subject})</option>`)}
               </select>
-              <div style=${{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+              <div style=${{display:"flex",gap:8,alignItems:"center"}}>
                 <label style=${{fontSize:12,color:"#888",whiteSpace:"nowrap"}}>수업시간</label>
                 <input type="number" value=${sessionForm.duration} onChange=${e=>setSessionForm({...sessionForm,duration:parseInt(e.target.value)||0})}
                   style=${{padding:"8px 10px",borderRadius:8,border:"1px solid #ddd",fontSize:13,width:70,background:"#fff"}} />
@@ -374,9 +351,9 @@ function TutoringTracker(){
               </div>
               <input placeholder="메모 (선택)" value=${sessionForm.note} onChange=${e=>setSessionForm({...sessionForm,note:e.target.value})}
                 style=${{padding:"8px 10px",borderRadius:8,border:"1px solid #ddd",fontSize:13,background:"#fff"}} />
-              <div style=${{display:"flex",gap:6,flexWrap:"wrap"}}>
-                <button onClick=${addSessionFn} style=${{flex:"1 1 120px",padding:"8px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>저장</button>
-                <button onClick=${()=>setAddingSession(false)} style=${{flex:"0 0 auto",padding:"8px 14px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:13,cursor:"pointer",color:"#888"}}>취소</button>
+              <div style=${{display:"flex",gap:6}}>
+                <button onClick=${addSessionFn} style=${{flex:1,padding:"8px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>저장</button>
+                <button onClick=${()=>setAddingSession(false)} style=${{padding:"8px 14px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:13,cursor:"pointer",color:"#888"}}>취소</button>
               </div>
             </div>
           </div>`:null}
@@ -395,8 +372,8 @@ function TutoringTracker(){
         ${students.map(st=>{const c=COLORS[st.colorIdx%COLORS.length];const{start,end}=getCycleRange(st.payDay,cycleOffset);const{count,totalMin,list}=getCycleSessions(st.id,sessions,start,end);
           return html`<${StudentCycleCard} key=${st.id} student=${st} color=${c} start=${start} end=${end} count=${count} totalMin=${totalMin} list=${list} />`})}
         ${students.length>0?html`<div style=${{background:"#1a1a1a",borderRadius:14,padding:16,color:"#fff",marginTop:8}}>
-          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style=${{fontSize:14,fontWeight:600}}>총 예상 수입</span><span style=${{fontSize:22,fontWeight:800,whiteSpace:"nowrap"}}>${formatMoney(students.reduce((a,s)=>a+s.pay,0))}</span>
+          <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style=${{fontSize:14,fontWeight:600}}>총 예상 수입</span><span style=${{fontSize:22,fontWeight:800}}>${formatMoney(students.reduce((a,s)=>a+s.pay,0))}</span>
           </div></div>`:null}
       </div>`:null}
 
@@ -407,25 +384,25 @@ function TutoringTracker(){
           <div style=${{display:"flex",flexDirection:"column",gap:10}}>
             <input placeholder="이름" value=${form.name} onChange=${e=>setForm({...form,name:e.target.value})} style=${{padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,background:"#FAFAF8"}} />
             <input placeholder="과목 (예: 수학)" value=${form.subject} onChange=${e=>setForm({...form,subject:e.target.value})} style=${{padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,background:"#FAFAF8"}} />
-            <div style=${{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <div style=${{flex:"1 1 160px"}}><label style=${{fontSize:11,color:"#999",display:"block",marginBottom:4}}>월 급여 (원)</label>
+            <div style=${{display:"flex",gap:8}}>
+              <div style=${{flex:1}}><label style=${{fontSize:11,color:"#999",display:"block",marginBottom:4}}>월 급여 (원)</label>
                 <input type="number" value=${form.pay} onChange=${e=>setForm({...form,pay:parseInt(e.target.value)||0})} style=${{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #ddd",fontSize:14,background:"#FAFAF8",boxSizing:"border-box"}} /></div>
-              <div style=${{flex:"0 0 100px"}}><label style=${{fontSize:11,color:"#999",display:"block",marginBottom:4}}>급여일</label>
+              <div style=${{width:100}}><label style=${{fontSize:11,color:"#999",display:"block",marginBottom:4}}>급여일</label>
                 <select value=${form.payDay} onChange=${e=>setForm({...form,payDay:parseInt(e.target.value)})} style=${{width:"100%",padding:"10px 8px",borderRadius:8,border:"1px solid #ddd",fontSize:14,background:"#FAFAF8"}}>
                   ${Array.from({length:28},(_,i)=>i+1).map(d=>html`<option key=${d} value=${d}>${d}일</option>`)}</select></div>
             </div>
-            <div style=${{display:"flex",gap:6,flexWrap:"wrap"}}>
-              <button onClick=${saveStudent} style=${{flex:"1 1 140px",padding:"10px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>${editingStudent?"수정 완료":"등록"}</button>
-              ${editingStudent?html`<button onClick=${()=>{setEditingStudent(null);setForm(emptyStudentForm)}}
-                style=${{flex:"0 0 auto",padding:"10px 16px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:14,cursor:"pointer",color:"#888"}}>취소</button>`:null}
+            <div style=${{display:"flex",gap:6}}>
+              <button onClick=${saveStudent} style=${{flex:1,padding:"10px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>${editingStudent?"수정 완료":"등록"}</button>
+              ${editingStudent?html`<button onClick=${()=>{setEditingStudent(null);setForm({name:"",subject:"",pay:300000,payDay:1})}}
+                style=${{padding:"10px 16px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:14,cursor:"pointer",color:"#888"}}>취소</button>`:null}
             </div>
           </div>
         </div>
         ${students.map(st=>{const c=COLORS[st.colorIdx%COLORS.length];return html`
-          <div key=${st.id} style=${{background:"#fff",borderRadius:14,padding:14,marginBottom:8,border:"1px solid #E8E6E1",borderLeft:"4px solid "+c.border,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <div style=${{minWidth:0,flex:"1 1 220px",lineHeight:1.45}}><div style=${{fontWeight:700,fontSize:15,color:c.text,wordBreak:"normal"}}>${st.name}</div>
-              <div style=${{fontSize:12,color:"#999",marginTop:2,wordBreak:"normal",overflowWrap:"break-word"}}>${st.subject} · ${formatMoney(st.pay)} · 급여일 ${st.payDay}일</div></div>
-            <div style=${{display:"flex",gap:4,flex:"0 0 auto",marginLeft:"auto"}}>
+          <div key=${st.id} style=${{background:"#fff",borderRadius:14,padding:14,marginBottom:8,border:"1px solid #E8E6E1",borderLeft:"4px solid "+c.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style=${{fontWeight:700,fontSize:15,color:c.text}}>${st.name}</div>
+              <div style=${{fontSize:12,color:"#999",marginTop:2}}>${st.subject} · ${formatMoney(st.pay)} · 급여일 ${st.payDay}일</div></div>
+            <div style=${{display:"flex",gap:4}}>
               <button onClick=${()=>{setEditingStudent(st);setForm({name:st.name,subject:st.subject,pay:st.pay,payDay:st.payDay})}} style=${{padding:"5px 10px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",color:"#555"}}>수정</button>
               <button onClick=${()=>deleteStudent(st.id)} style=${{padding:"5px 10px",borderRadius:6,border:"1px solid #fdd",background:"#fff",fontSize:12,cursor:"pointer",color:"#E53935"}}>삭제</button>
             </div></div>`})}
@@ -434,12 +411,12 @@ function TutoringTracker(){
 
       <div style=${{background:"#fff",borderRadius:14,padding:16,marginTop:24,marginBottom:40,border:"1px solid #E8E6E1"}}>
         <div style=${{fontSize:13,fontWeight:700,marginBottom:12,color:"#555"}}>설정</div>
-        <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}>
-          <div style=${{minWidth:0}}><div style=${{fontSize:13,fontWeight:600}}>GitHub 동기화</div>
+        <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}>
+          <div><div style=${{fontSize:13,fontWeight:600}}>GitHub 동기화</div>
             <div style=${{fontSize:11,color:syncStatus==="ok"?"#4CAF50":syncStatus==="error"?"#F44336":"#999",marginTop:2}}>
               ${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패":"미연결"}</div></div>
           <button onClick=${()=>{if(confirm("토큰을 삭제하고 로그아웃하시겠습니까?")){localStorage.removeItem("gh-token");setTokenState("");location.reload()}}}
-            style=${{padding:"7px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:11,cursor:"pointer",color:"#888",whiteSpace:"nowrap"}}>토큰 변경</button>
+            style=${{padding:"5px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:11,cursor:"pointer",color:"#888"}}>토큰 변경</button>
         </div>
         <button onClick=${()=>{if(confirm("모든 데이터를 초기화하시겠습니까?")){setStudents([]);setSessions({});saveToGH([],{})}}}
           style=${{width:"100%",padding:"8px 0",borderRadius:8,border:"1px solid #eee",background:"#FAFAF8",color:"#ccc",fontSize:11,cursor:"pointer",marginTop:12}}>데이터 초기화</button>

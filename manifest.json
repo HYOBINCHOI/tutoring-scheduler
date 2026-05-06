@@ -1,6 +1,6 @@
 {
-  "name": "tutoring scheduler",
-  "short_name": "scheduler",
+  "name": "과외 매니저",
+  "short_name": "과외매니저",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F7F6F3",
