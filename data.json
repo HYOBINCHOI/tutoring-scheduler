@@ -1,14 +1,5 @@
 {
-  "students": [
-    {
-      "id": "xkwhdh22",
-      "name": "ì í",
-      "subject": "ì¤1 ìì´",
-      "pay": 300000,
-      "payDay": 23,
-      "colorIdx": 1
-    }
-  ],
+  "students": [],
   "sessions": {
     "2026-02-23": [
       {
