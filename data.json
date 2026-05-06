@@ -9,5 +9,174 @@
       "colorIdx": 0
     }
   ],
-  "sessions": {}
+  "sessions": {
+    "2026-02-23": [
+      {
+        "id": "zf0q6jwv",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-02-27": [
+      {
+        "id": "ijlrhlk6",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-02": [
+      {
+        "id": "ur0io5gc",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-06": [
+      {
+        "id": "9kg0n8bk",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-09": [
+      {
+        "id": "qvzz5zmo",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-13": [
+      {
+        "id": "2vf08ipt",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-16": [
+      {
+        "id": "1cz87i7y",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-20": [
+      {
+        "id": "a3iav52m",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-23": [
+      {
+        "id": "kuehi63x",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-27": [
+      {
+        "id": "8pa743rp",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-03-30": [
+      {
+        "id": "c9x08961",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-05": [
+      {
+        "id": "f3flyoh2",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-06": [
+      {
+        "id": "sm77e3e2",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-10": [
+      {
+        "id": "v3n81de6",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-13": [
+      {
+        "id": "v2tad030",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-17": [
+      {
+        "id": "r80xa2vj",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-20": [
+      {
+        "id": "imkankfz",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-24": [
+      {
+        "id": "6vx0gw60",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-04-27": [
+      {
+        "id": "rymgsg9d",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-05-01": [
+      {
+        "id": "3sa7wgag",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-05-04": [
+      {
+        "id": "h51ph9bz",
+        "studentId": "b0s8dhx8",
+        "duration": 90,
+        "note": ""
+      }
+    ]
+  }
 }
