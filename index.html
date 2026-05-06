@@ -133,11 +133,11 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
       </div>
       <div style=${{background:c.bg,borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style=${{fontSize:13,color:c.text,fontWeight:600}}>급여</span>
-        <span style=${{fontSize:18,fontWeight:800,color:c.text,overflowWrap:"anywhere"}}>${formatMoney(st.pay)}</span>
+        <span style=${{fontSize:18,fontWeight:800,color:c.text,whiteSpace:"nowrap"}}>${formatMoney(st.pay)}</span>
       </div>
       ${list.length>0?html`<div>
         <button onClick=${()=>setExpanded(!expanded)} style=${{width:"100%",padding:"8px 0",border:"none",background:"none",color:"#999",fontSize:12,cursor:"pointer",fontWeight:600}}>${expanded?"수업 내역 접기 ▲":"수업 내역 보기 ▼"}</button>
-        ${expanded?html`<div style=${{marginTop:4}}>${list.map((s,i)=>{const p=s.date.split("-");return html`<div key=${s.id||i} style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 12px",borderRadius:8,background:i%2===0?"#FAFAF8":"#fff",fontSize:13}}><span style=${{color:"#555",fontWeight:600,whiteSpace:"nowrap"}}>${parseInt(p[1])}월 ${parseInt(p[2])}일</span><span style=${{color:"#999",overflowWrap:"anywhere"}}>${s.duration}분${s.note?" · "+s.note:""}</span></div>`})}</div>`:null}
+        ${expanded?html`<div style=${{marginTop:4}}>${list.map((s,i)=>{const p=s.date.split("-");return html`<div key=${s.id||i} style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 12px",borderRadius:8,background:i%2===0?"#FAFAF8":"#fff",fontSize:13,lineHeight:1.45}}><span style=${{color:"#555",fontWeight:600,whiteSpace:"nowrap"}}>${parseInt(p[1])}월 ${parseInt(p[2])}일</span><span style=${{color:"#999",wordBreak:"normal",overflowWrap:"break-word"}}>${s.duration}분${s.note?" · "+s.note:""}</span></div>`})}</div>`:null}
       </div>`:null}
     </div>`;
 }
@@ -342,8 +342,8 @@ function TutoringTracker(){
           ${selectedSessions.length===0&&!addingSession?html`<div style=${{color:"#aaa",fontSize:13,textAlign:"center",padding:20}}>${students.length===0?"먼저 학생을 등록해주세요":"수업 기록이 없습니다"}</div>`:null}
           ${selectedSessions.map(s=>{const st2=students.find(x=>x.id===s.studentId);const cl=st2?COLORS[st2.colorIdx%COLORS.length]:COLORS[0];
             return html`<div key=${s.id} style=${{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"10px 12px",borderRadius:10,background:cl.bg,marginBottom:6,borderLeft:"4px solid "+cl.border}}>
-              <div style=${{minWidth:0}}><div style=${{fontWeight:700,fontSize:14,color:cl.text}}>${st2?.name||"삭제된 학생"}</div>
-              <div style=${{fontSize:12,color:"#888",marginTop:2,overflowWrap:"anywhere"}}>${st2?.subject} · ${s.duration}분${s.note?" · "+s.note:""}</div></div>
+              <div style=${{minWidth:0,flex:"1 1 auto",lineHeight:1.45}}><div style=${{fontWeight:700,fontSize:14,color:cl.text,wordBreak:"normal"}}>${st2?.name||"삭제된 학생"}</div>
+              <div style=${{fontSize:12,color:"#888",marginTop:2,wordBreak:"normal",overflowWrap:"break-word"}}>${st2?.subject} · ${s.duration}분${s.note?" · "+s.note:""}</div></div>
               <button onClick=${()=>deleteSession(selectedDate,s.id)} style=${{border:"none",background:"none",color:"#ccc",cursor:"pointer",fontSize:16,padding:4}}>×</button>
             </div>`})}
           ${addingSession?html`<div style=${{marginTop:8,padding:14,background:"#FAFAF8",borderRadius:10,border:"1px dashed #ddd"}}>
@@ -382,7 +382,7 @@ function TutoringTracker(){
           return html`<${StudentCycleCard} key=${st.id} student=${st} color=${c} start=${start} end=${end} count=${count} totalMin=${totalMin} list=${list} />`})}
         ${students.length>0?html`<div style=${{background:"#1a1a1a",borderRadius:14,padding:16,color:"#fff",marginTop:8}}>
           <div style=${{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style=${{fontSize:14,fontWeight:600}}>총 예상 수입</span><span style=${{fontSize:22,fontWeight:800,overflowWrap:"anywhere"}}>${formatMoney(students.reduce((a,s)=>a+s.pay,0))}</span>
+            <span style=${{fontSize:14,fontWeight:600}}>총 예상 수입</span><span style=${{fontSize:22,fontWeight:800,whiteSpace:"nowrap"}}>${formatMoney(students.reduce((a,s)=>a+s.pay,0))}</span>
           </div></div>`:null}
       </div>`:null}
 
@@ -409,9 +409,9 @@ function TutoringTracker(){
         </div>
         ${students.map(st=>{const c=COLORS[st.colorIdx%COLORS.length];return html`
           <div key=${st.id} style=${{background:"#fff",borderRadius:14,padding:14,marginBottom:8,border:"1px solid #E8E6E1",borderLeft:"4px solid "+c.border,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <div style=${{minWidth:0,flex:"1 1 180px"}}><div style=${{fontWeight:700,fontSize:15,color:c.text}}>${st.name}</div>
-              <div style=${{fontSize:12,color:"#999",marginTop:2,overflowWrap:"anywhere"}}>${st.subject} · ${formatMoney(st.pay)} · 급여일 ${st.payDay}일</div></div>
-            <div style=${{display:"flex",gap:4,flex:"0 0 auto"}}>
+            <div style=${{minWidth:0,flex:"1 1 220px",lineHeight:1.45}}><div style=${{fontWeight:700,fontSize:15,color:c.text,wordBreak:"normal"}}>${st.name}</div>
+              <div style=${{fontSize:12,color:"#999",marginTop:2,wordBreak:"normal",overflowWrap:"break-word"}}>${st.subject} · ${formatMoney(st.pay)} · 급여일 ${st.payDay}일</div></div>
+            <div style=${{display:"flex",gap:4,flex:"0 0 auto",marginLeft:"auto"}}>
               <button onClick=${()=>{setEditingStudent(st);setForm({name:st.name,subject:st.subject,pay:st.pay,payDay:st.payDay})}} style=${{padding:"5px 10px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",color:"#555"}}>수정</button>
               <button onClick=${()=>deleteStudent(st.id)} style=${{padding:"5px 10px",borderRadius:6,border:"1px solid #fdd",background:"#fff",fontSize:12,cursor:"pointer",color:"#E53935"}}>삭제</button>
             </div></div>`})}
