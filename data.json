@@ -2,16 +2,16 @@
   "students": [
     {
       "id": "p7nd76xt",
-      "name": "수아",
-      "subject": "초6 영어",
+      "name": "ìì",
+      "subject": "ì´6 ìì´",
       "pay": 250000,
       "payDay": 23,
       "colorIdx": 0
     },
     {
       "id": "ztdzginl",
-      "name": "정훈",
-      "subject": "중1 영어",
+      "name": "ì í",
+      "subject": "ì¤1 ìì´",
       "pay": 300000,
       "payDay": 23,
       "colorIdx": 1
@@ -332,6 +332,14 @@
         "studentId": "ztdzginl",
         "duration": 90,
         "note": ""
+      }
+    ],
+    "2026-05-08": [
+      {
+        "id": "cc0pogxk",
+        "studentId": "p7nd76xt",
+        "duration": 90,
+        "note": "아아"
       }
     ]
   }
