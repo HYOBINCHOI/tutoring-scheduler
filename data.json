@@ -2,16 +2,16 @@
   "students": [
     {
       "id": "p7nd76xt",
-      "name": "ìì",
-      "subject": "ì´6 ìì´",
+      "name": "수아",
+      "subject": "초6 영어",
       "pay": 250000,
       "payDay": 23,
       "colorIdx": 0
     },
     {
       "id": "ztdzginl",
-      "name": "ì í",
-      "subject": "ì¤1 ìì´",
+      "name": "Ã¬Â ÂÃ­ÂÂ",
+      "subject": "Ã¬Â¤Â1 Ã¬ÂÂÃ¬ÂÂ´",
       "pay": 300000,
       "payDay": 23,
       "colorIdx": 1
