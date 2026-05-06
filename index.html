@@ -187,7 +187,8 @@ function TutoringTracker(){
   const saveStudent=()=>{
     if(!form.name.trim())return;let ns;
     if(editingStudent)ns=students.map(s=>s.id===editingStudent.id?{...s,...form}:s);
-    else ns=[...students,{id:genId(),...form,colorIdx:students.length%COLORS.length}];
+    else{const used=students.map(s=>s.colorIdx);let ci=0;while(used.includes(ci)&&ci<COLORS.length)ci++;if(ci>=COLORS.length)ci=students.length%COLORS.length;
+      ns=[...students,{id:genId(),...form,colorIdx:ci}]}
     updateStudents(ns);setForm({name:"",subject:"",pay:300000,payDay:1});setEditingStudent(null);setView("calendar");
   };
   const deleteStudent=(id)=>{
