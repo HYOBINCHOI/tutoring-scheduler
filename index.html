@@ -90,9 +90,9 @@ async function ghLoad(){
   }catch(e){return null}
 }
 
-async function ghSave(students,sessions,sha){
+async function ghSave(students,sessions,dateNotes,sha){
   const token=getToken();if(!token)return null;
-  const content=btoa(unescape(encodeURIComponent(JSON.stringify({students,sessions},null,2))));
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify({students,sessions,dateNotes},null,2))));
   const body={message:"데이터 업데이트",content};
   if(sha)body.sha=sha;
   try{
@@ -146,6 +146,7 @@ function StudentCycleCard({student,color,start,end,count,totalMin,list}){
 function TutoringTracker(){
   const[students,setStudents]=useState([]);
   const[sessions,setSessions]=useState({});
+  const[dateNotes,setDateNotes]=useState({});
   const[currentYear,setCurrentYear]=useState(new Date().getFullYear());
   const[currentMonth,setCurrentMonth]=useState(new Date().getMonth());
   const[selectedDate,setSelectedDate]=useState(null);
@@ -153,7 +154,8 @@ function TutoringTracker(){
   const[editingStudent,setEditingStudent]=useState(null);
   const[addingSession,setAddingSession]=useState(false);
   const[cycleOffset,setCycleOffset]=useState(0);
-  const[form,setForm]=useState({name:"",subject:"",pay:300000,payDay:1});
+  const emptyStudentForm={name:"",subject:"",pay:300000,payDay:1};
+  const[form,setForm]=useState(emptyStudentForm);
   const[sessionForm,setSessionForm]=useState({studentId:"",duration:90,note:""});
   const[bulkMode,setBulkMode]=useState(false);
   const[bulkDates,setBulkDates]=useState([]);
@@ -168,12 +170,12 @@ function TutoringTracker(){
     setSyncStatus("syncing");
     ghLoad().then(result=>{
       if(result){
-        setStudents(result.students||[]);setSessions(result.sessions||{});
+        setStudents(result.students||[]);setSessions(result.sessions||{});setDateNotes(result.dateNotes||{});
         shaRef.current=result.sha;setSyncStatus("ok");
-        localStorage.setItem("tutor-data",JSON.stringify({students:result.students||[],sessions:result.sessions||{}}));
+        localStorage.setItem("tutor-data",JSON.stringify({students:result.students||[],sessions:result.sessions||{},dateNotes:result.dateNotes||{}}));
       }else{
         // Fallback to localStorage
-        try{const r=localStorage.getItem("tutor-data");if(r){const d=JSON.parse(r);setStudents(d.students||[]);setSessions(d.sessions||{})}}catch(e){}
+        try{const r=localStorage.getItem("tutor-data");if(r){const d=JSON.parse(r);setStudents(d.students||[]);setSessions(d.sessions||{});setDateNotes(d.dateNotes||{})}}catch(e){}
         setSyncStatus("error");
       }
       setLoaded(true);
@@ -181,24 +183,32 @@ function TutoringTracker(){
   },[token]);
 
   // Save to GitHub
-  const saveToGH=async(st,se)=>{
-    localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se}));
+  const saveToGH=async(st,se,dn=dateNotes)=>{
+    localStorage.setItem("tutor-data",JSON.stringify({students:st,sessions:se,dateNotes:dn}));
     if(!token)return;
     setSyncStatus("syncing");
-    const newSha=await ghSave(st,se,shaRef.current);
+    const newSha=await ghSave(st,se,dn,shaRef.current);
     if(newSha){shaRef.current=newSha;setSyncStatus("ok")}
     else setSyncStatus("error");
   };
 
   const updateStudents=(s)=>{setStudents(s);saveToGH(s,sessions)};
   const updateSessions=(s)=>{setSessions(s);saveToGH(students,s)};
+  const updateDateNote=(dk,note,sync=false)=>{
+    const next={...dateNotes};
+    if(note.trim())next[dk]=note;
+    else delete next[dk];
+    setDateNotes(next);
+    localStorage.setItem("tutor-data",JSON.stringify({students,sessions,dateNotes:next}));
+    if(sync)saveToGH(students,sessions,next);
+  };
 
   const saveStudent=()=>{
     if(!form.name.trim())return;let ns;
     if(editingStudent)ns=students.map(s=>s.id===editingStudent.id?{...s,...form}:s);
     else{const used=students.map(s=>s.colorIdx);let ci=0;while(used.includes(ci)&&ci<COLORS.length)ci++;if(ci>=COLORS.length)ci=students.length%COLORS.length;
       ns=[...students,{id:genId(),...form,colorIdx:ci}]}
-    updateStudents(ns);setForm({name:"",subject:"",pay:300000,payDay:1});setEditingStudent(null);setView("calendar");
+    updateStudents(ns);setForm(emptyStudentForm);setEditingStudent(null);setView("calendar");
   };
   const deleteStudent=(id)=>{
     updateStudents(students.filter(s=>s.id!==id));
@@ -225,6 +235,7 @@ function TutoringTracker(){
   const today=new Date();const todayKey=dateKey(today.getFullYear(),today.getMonth(),today.getDate());
   const calendarCells=[];for(let i=0;i<firstDay;i++)calendarCells.push(null);for(let d=1;d<=totalDays;d++)calendarCells.push(d);
   const selectedSessions=selectedDate?(sessions[selectedDate]||[]):[];
+  const selectedDateNote=selectedDate?(dateNotes[selectedDate]||""):"";
 
   const handleTokenSave=(newToken)=>{
     setToken(newToken);setTokenState(newToken);
@@ -232,7 +243,7 @@ function TutoringTracker(){
 
   const syncDot=syncStatus==="syncing"?"#FF9800":syncStatus==="ok"?"#4CAF50":syncStatus==="error"?"#F44336":"#ccc";
 
-  const tabBtn=(v,label)=>html`<button key=${v} onClick=${()=>{setView(v);if(v==="students"){setEditingStudent(null);setForm({name:"",subject:"",pay:300000,payDay:1})}}}
+  const tabBtn=(v,label)=>html`<button key=${v} onClick=${()=>{setView(v);if(v==="students"){setEditingStudent(null);setForm(emptyStudentForm)}}}
     style=${{padding:"7px 12px",borderRadius:8,border:"none",background:view===v?"#1a1a1a":"#EFEDE8",color:view===v?"#fff":"#555",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap",flex:"1 1 auto",minHeight:34}}>${label}</button>`;
 
   if(!loaded)return html`<div style=${{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",color:"#999",fontSize:14}}>불러오는 중...</div>`;
@@ -255,7 +266,7 @@ function TutoringTracker(){
       <div style=${{display:"flex",alignItems:"center",gap:8,minWidth:0,flex:"1 1 180px"}}>
         <span style=${{fontSize:20,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>과외 매니저</span>
         <span style=${{fontSize:11,background:"#E8F5E9",color:"#2E7D32",padding:"2px 8px",borderRadius:99,fontWeight:600}}>${students.length}명</span>
-        <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{}}))}else setSyncStatus("error")}}}
+        <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});setDateNotes(r.dateNotes||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{},dateNotes:r.dateNotes||{}}))}else setSyncStatus("error")}}}
           style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s",flex:"0 0 auto"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
       </div>
       <div style=${{display:"flex",gap:6,flex:"1 1 220px",minWidth:0}}>${tabBtn("calendar","캘린더")}${tabBtn("summary","정산")}${tabBtn("students","학생관리")}</div>
@@ -283,7 +294,7 @@ function TutoringTracker(){
             if(day===null)return html`<div key=${"e"+idx} />`;
             const dk=dateKey(currentYear,currentMonth,day);const daySessions=sessions[dk]||[];
             const isToday=dk===todayKey,isSelected=!bulkMode&&dk===selectedDate,isBulkSelected=bulkMode&&bulkDates.includes(dk);
-            const dayOfWeek=(firstDay+day-1)%7;const isPayDay=students.some(s=>s.payDay===day);
+            const dayOfWeek=(firstDay+day-1)%7;const isPayDay=students.some(s=>s.payDay===day);const hasDateNote=!!(dateNotes[dk]&&dateNotes[dk].trim());
             return html`<div key=${dk} onClick=${()=>{if(bulkMode)toggleBulkDate(dk);else{setSelectedDate(dk);setAddingSession(false)}}}
               style=${{aspectRatio:"1",borderRadius:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 cursor:"pointer",position:"relative",
@@ -295,6 +306,7 @@ function TutoringTracker(){
                 ${daySessions.map(s=>{const st2=students.find(x=>x.id===s.studentId);const cl=st2?COLORS[st2.colorIdx%COLORS.length]:COLORS[0];
                   return html`<div key=${s.id} style=${{width:6,height:6,borderRadius:99,background:isSelected?"#fff":cl.dot}} />`})}
               </div>`:null}
+              ${hasDateNote?html`<div style=${{position:"absolute",bottom:3,right:4,fontSize:9,color:isSelected||isBulkSelected?"#fff":"#9C27B0",fontWeight:800}}>✎</div>`:null}
               ${isPayDay?html`<div style=${{position:"absolute",top:2,right:4,fontSize:8,color:isSelected||isBulkSelected?"#FFD54F":"#FF9800",fontWeight:700}}>₩</div>`:null}
             </div>`;
           })}
@@ -339,6 +351,8 @@ function TutoringTracker(){
             ${students.length>0?html`<button onClick=${()=>{setAddingSession(true);setSessionForm({studentId:students[0]?.id||"",duration:90,note:""})}}
               style=${{padding:"7px 12px",borderRadius:8,border:"none",background:"#4CAF50",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>+ 수업 추가</button>`:null}
           </div>
+          <textarea placeholder="날짜 메모 (선택)" value=${selectedDateNote} onChange=${e=>updateDateNote(selectedDate,e.target.value)} onBlur=${e=>updateDateNote(selectedDate,e.target.value,true)}
+            style=${{width:"100%",minHeight:70,padding:"10px 12px",borderRadius:10,border:"1px solid #E8E6E1",fontSize:13,lineHeight:1.5,background:"#FAFAF8",resize:"vertical",marginBottom:12,boxSizing:"border-box"}} />
           ${selectedSessions.length===0&&!addingSession?html`<div style=${{color:"#aaa",fontSize:13,textAlign:"center",padding:20}}>${students.length===0?"먼저 학생을 등록해주세요":"수업 기록이 없습니다"}</div>`:null}
           ${selectedSessions.map(s=>{const st2=students.find(x=>x.id===s.studentId);const cl=st2?COLORS[st2.colorIdx%COLORS.length]:COLORS[0];
             return html`<div key=${s.id} style=${{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"10px 12px",borderRadius:10,background:cl.bg,marginBottom:6,borderLeft:"4px solid "+cl.border}}>
@@ -402,7 +416,7 @@ function TutoringTracker(){
             </div>
             <div style=${{display:"flex",gap:6,flexWrap:"wrap"}}>
               <button onClick=${saveStudent} style=${{flex:"1 1 140px",padding:"10px 0",borderRadius:8,border:"none",background:"#1a1a1a",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>${editingStudent?"수정 완료":"등록"}</button>
-              ${editingStudent?html`<button onClick=${()=>{setEditingStudent(null);setForm({name:"",subject:"",pay:300000,payDay:1})}}
+              ${editingStudent?html`<button onClick=${()=>{setEditingStudent(null);setForm(emptyStudentForm)}}
                 style=${{flex:"0 0 auto",padding:"10px 16px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontWeight:500,fontSize:14,cursor:"pointer",color:"#888"}}>취소</button>`:null}
             </div>
           </div>
