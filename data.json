@@ -1,5 +1,14 @@
 {
-  "students": [],
+  "students": [
+    {
+      "id": "p7nd76xt",
+      "name": "수아",
+      "subject": "초6 영어",
+      "pay": 250000,
+      "payDay": 23,
+      "colorIdx": 0
+    }
+  ],
   "sessions": {
     "2026-02-23": [
       {
