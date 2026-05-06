@@ -250,7 +250,7 @@ function TutoringTracker(){
 
   // Token setup screen
   if(!token)return html`<div style=${{maxWidth:400,margin:"0 auto",padding:"64px 16px",textAlign:"center"}}>
-    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>과외 매니저</div>
+    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>tutoring scheduler</div>
     <div style=${{fontSize:13,color:"#999",marginBottom:32}}>GitHub에 데이터를 저장합니다</div>
     <div style=${{background:"#fff",borderRadius:14,padding:24,border:"1px solid #E8E6E1",textAlign:"left"}}>
       <div style=${{fontSize:14,fontWeight:700,marginBottom:16}}>GitHub 토큰 입력</div>
@@ -264,7 +264,7 @@ function TutoringTracker(){
   return html`<div>
     <div style=${{background:"#fff",borderBottom:"1px solid #E8E6E1",padding:"14px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap",position:"sticky",top:0,zIndex:10}}>
       <div style=${{display:"flex",alignItems:"center",gap:8,minWidth:0,flex:"1 1 180px"}}>
-        <span style=${{fontSize:20,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>과외 매니저</span>
+        <span style=${{fontSize:20,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>tutoring scheduler</span>
         <span style=${{fontSize:11,background:"#E8F5E9",color:"#2E7D32",padding:"2px 8px",borderRadius:99,fontWeight:600}}>${students.length}명</span>
         <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});setDateNotes(r.dateNotes||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{},dateNotes:r.dateNotes||{}}))}else setSyncStatus("error")}}}
           style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s",flex:"0 0 auto"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
