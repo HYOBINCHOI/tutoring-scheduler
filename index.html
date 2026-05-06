@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="과외매니저">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<title>tutoring-scheduler</title>
+<title>과외 매니저</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -230,7 +230,7 @@ function TutoringTracker(){
 
   // Token setup screen
   if(!token)return html`<div style=${{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
-    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>tutoring-scheduler</div>
+    <div style=${{fontSize:28,fontWeight:800,marginBottom:8}}>과외 매니저</div>
     <div style=${{fontSize:13,color:"#999",marginBottom:32}}>GitHub에 데이터를 저장합니다</div>
     <div style=${{background:"#fff",borderRadius:14,padding:24,border:"1px solid #E8E6E1",textAlign:"left"}}>
       <div style=${{fontSize:14,fontWeight:700,marginBottom:16}}>GitHub 토큰 입력</div>
@@ -244,7 +244,7 @@ function TutoringTracker(){
   return html`<div>
     <div style=${{background:"#fff",borderBottom:"1px solid #E8E6E1",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
       <div style=${{display:"flex",alignItems:"center",gap:10}}>
-        <span style=${{fontSize:22,fontWeight:800,letterSpacing:"-0.5px"}}>tutoring-scheduler</span>
+        <span style=${{fontSize:22,fontWeight:800,letterSpacing:"-0.5px"}}>과외 매니저</span>
         <span style=${{fontSize:11,background:"#E8F5E9",color:"#2E7D32",padding:"2px 8px",borderRadius:99,fontWeight:600}}>${students.length}명</span>
         <div onClick=${async()=>{if(token){setSyncStatus("syncing");const r=await ghLoad();if(r){setStudents(r.students||[]);setSessions(r.sessions||{});shaRef.current=r.sha;setSyncStatus("ok");localStorage.setItem("tutor-data",JSON.stringify({students:r.students||[],sessions:r.sessions||{}}))}else setSyncStatus("error")}}}
           style=${{width:10,height:10,borderRadius:99,background:syncDot,cursor:"pointer",transition:"all 0.3s"}} title=${syncStatus==="ok"?"동기화 완료":syncStatus==="syncing"?"동기화 중...":syncStatus==="error"?"동기화 실패 (탭하여 재시도)":""}} />
