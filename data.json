@@ -15,6 +15,14 @@
       "pay": 300000,
       "payDay": 23,
       "colorIdx": 1
+    },
+    {
+      "id": "f9pxrqqt",
+      "name": "수아 2",
+      "subject": "초6 영어",
+      "pay": 250000,
+      "payDay": 1,
+      "colorIdx": 2
     }
   ],
   "sessions": {
