@@ -23,6 +23,14 @@
       "pay": 250000,
       "payDay": 1,
       "colorIdx": 2
+    },
+    {
+      "id": "b15s9ank",
+      "name": "정훈 2",
+      "subject": "중1 영어",
+      "pay": 300000,
+      "payDay": 1,
+      "colorIdx": 3
     }
   ],
   "sessions": {
