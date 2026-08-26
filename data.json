@@ -682,12 +682,26 @@
         "studentId": "f9pxrqqt",
         "duration": 90,
         "note": ""
+      },
+      {
+        "id": "494tip2u",
+        "studentId": "b15s9ank",
+        "duration": 90,
+        "note": ""
       }
     ],
     "2026-08-24": [
       {
         "id": "5pfdofij",
         "studentId": "f9pxrqqt",
+        "duration": 90,
+        "note": ""
+      }
+    ],
+    "2026-08-26": [
+      {
+        "id": "yibr5z0a",
+        "studentId": "b15s9ank",
         "duration": 90,
         "note": ""
       }
